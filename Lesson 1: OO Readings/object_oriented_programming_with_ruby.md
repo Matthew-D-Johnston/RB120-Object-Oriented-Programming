@@ -12,16 +12,10 @@
 
 * **Objected Oriented Programming**, often referred to as **OOP**, is a programming paradigm that was created to deal with the growing complexity of large software systems.
 * Programmers needed a way to section off areas of code that performed certain procedures so that their programs could become the interaction of many small parts, as opposed to one massive blob of dependency.
+* **Encapsulation** is hiding pieces of functionality and making it unavailable to the rest of the code base. It is a form of data protection, so that data cannot be manipulated or changed without obvious intention. It is what defines the boundaries in your application and allows your code to achieve new levels of complexity.
 
-```
-Encapsulation: encapsulation is hiding pieces of functionality and making it unavailable to the rest of the code base. It is a form of data protection, so that data cannot be manipulated or changed without obvious intention. It is what defines the boundaries in your application and allows your code to achieve new levels of complexity.
-```
-
-* Another benefit of creating objects is that they allow the programmer to think on a new level of abstraction. Objects are represented as real-world nounts and can be given methods that describe the behavior the programmer is trying to represent.
-
-```
-Polymorphism: polymorphism is the ability for data to be represented as many different types. "Poly" stands for "many" and "morph" stands for "forms". OOP gives us flexibility in using pre-written code for new purposes.
-```
+* Another benefit of creating objects is that they allow the programmer to think on a new level of abstraction. Objects are represented as real-world nouns and can be given methods that describe the behavior the programmer is trying to represent.
+* **Polymorphism** is the ability for data to be represented as many different types. "Poly" stands for "many" and "morph" stands for "forms". OOP gives us flexibility in using pre-written code for new purposes.
 
 * The concept of **inheritance** is used in Ruby where a class inherits the behaviors of another class, referred to as the **superclass**. This gives Ruby programmers the power to define basic classes with large reusability and smaller **subclasses** for more fine-grained, detailed behaviors.
 * Another way to apply polymorphic structure to Ruby programs is to use a `Module`. Modules are similar to classes in that they contain shared behavior. However, you cannot create an object with a module. A module must be mixed in with a class using the `include` method invocation. This is called a **mixin**. After mixing in a module, the behaviors declared in that module are available to the class and its objects.
@@ -36,7 +30,7 @@ Polymorphism: polymorphism is the ability for data to be represented as many dif
 
 **Classes Define Objects**
 
-* Ruby defines the attributes and behaviors of its objects in **classess**. 
+* Ruby defines the attributes and behaviors of its objects in **classes**. 
 * To define a class, we use syntax similar to defining a method. We replace the `def` with `class` and use the CamelCase naming convention to create the name. We then use the reserved word `end` to finish the definition.
 * Ruby file names should be in snake_case, and reflect the class name. So in the below example, the file name is `good_dog.rb` and the class name is `GoodDog`.
 
@@ -50,7 +44,7 @@ sparky = GoodDog.new
 ```
 
 * In the above example, we created an instance of our `GoodDog` class and stored it in the variable `sparky`. We now have an object. We say that `sparky` is an object or instance of class `GoodDog`. This entire workflow of creating a new object or instance from a class is called **instantiation**, so we can also say that we've instantiated an object called `sparky` from the class `GoodDog`. 
-* The important fact here is that an ojbect is returned by calling the class method `new`.
+* The important fact here is that an object is returned by calling the class method `new`.
 
 ---
 
@@ -146,5 +140,475 @@ BasicObject
 
 **Exercises**
 
+1. How do we create an object in Ruby? Give an example of the creation of an object.
 
+
+
+A: Everything in Ruby is an object. I can create an object by assigning a value to a particular type of object. For example,
+
+```ruby
+str = "hello world" # <= this is a String object
+seven = 7 					# <= this is an Integer object
+```
+
+Launch School's answer: we create an object by defining a class and instantiating it by using the `.new` method to create an instance, also known as an object.
+
+```ruby
+class MyClass
+end
+
+my_obj = MyClass.new
+```
+
+
+
+2. What is a module? What is its purpose? How do we use them with our classes? Create a module for the class you created in exercise 1 and include it properly.
+
+
+
+A: A module is a collection of behaviors that is usable in other classes. It allows us to section off different types of behaviors and use them only for classes that we specifically designate. Modules can be used with classes via mixins, which require that we invoke the `include` method.
+
+```ruby
+module Calculate
+  def add(a, b)
+    a + b
+  end
+end
+
+class MyClass
+  include Calculate
+end 
+```
+
+Launch School's answer: a module allows us to group reusable code into one place. We use modules in our classes by using the `include` method invocation, followed by the module name. Modules are also used as a namespace.
+
+```ruby
+module Study
+end
+
+class MyClass
+  include Study
+end
+
+my_obj = MyClass.new
+```
+
+---
+
+#### Classes and Objects: Part I
+
+---
+
+**States and Behaviors**
+
+* We use classes to create objects.
+* When defining a class, we typically focus on two things: _states_ and _behaviors_. States track attributes for individual objects. Behaviors are what objects are capable of doing.
+* instance variables keep track of state.
+* instance methods expose behavior for objects.
+
+---
+
+**Initializing a New Object**
+
+* a _constructor_ is a method that gets triggered whenever we create a new object.
+
+---
+
+**Instance Variables**
+
+* Let's create a new object and instantiate it with some state, like a name.
+
+```ruby
+class GoodDog
+  def initialize(name)
+    @name = name
+  end
+end
+```
+
+* You'll notice something new here. The `@name` variable looks different because it has the `@` symbol in front of it. This is called an **instance variable**. It is a variable that exists as long as the object instance exists and it is one of the ways we tie data to objects. It does not "die" after the initialize method is run. It "lives on", to be referenced, until the object instance is destroyed. In the above example, our `initialize` method takes a parameter called `name`. You can pass arguments into the `initialize` method through the `new` method. Let's create an object using the `GoodDog` class from above:
+
+```ruby
+sparky = GoodDog.new("Sparky")
+```
+
+* Here, the string "Sparky" is being passed from the `new` method through to the `initialize` method, and is assigned to the local variable `name`. Within the constructor (i.e., the `initialize` method), we then set the instance variable `@name` to `name`, which results in assigning the string "Sparky" to the `@name` instance variable.
+* From that example, we can see that instance variables are responsible for keeping track of information about the _state_ of an object. In the above line of code, the name of the `sparky` object is the string "Sparky". This state for the object is tracked in the instance variable, `@name`. If we created another `GoodDog` object, for example, with `fido = GoodDog.new('Fido')`, then the `@name` instance variable for the `fido` object would contain the string "Fido". Every object's state is unique, and instance variables are how we keep track.
+
+---
+
+**Instance Methods**
+
+* Right now, our `GoodDog` class can't really do anything. Let's give it some behaviours.
+
+```ruby
+# good_dog.rb
+
+class GoodDog
+  def initialize(name)
+    @name = name
+  end
+  
+  def speak
+    "Arf!"
+  end
+end
+
+sparky = GoodDog.new("Sparky")
+sparky.speak
+```
+
+* When you run this program, nothing happens. This is because the `speak` method returned the string "Arf!", but we now need to print it out. So we should add `puts` in front of it, like this:
+
+```ruby
+puts sparky.speak 				# => Arf!
+```
+
+* Now, we should see that the output of our program is the string "Arf!". We told `sparky` to speak and he did. Now, suppose we have another `GoodDog` object:
+
+```ruby
+fido = GoodDog.new("Fido")
+puts fido.speak 						# => Arf!
+```
+
+* Our second `fido` object can also perform `GoodDog` behaviours. So again, all objects of the same class have the same behaviours, though they contain different states; here, the differing state is the name.
+* What if we wanted to not just say "Arf!", but say "Sparky says are!"? In our instance methods, which is what all the methods are so far, we have access to instance variables. So, we can use string interpolation and change our `speak` method to this (other code omitted):
+
+```ruby
+# good_dog.rb
+
+def speak
+  "#{@name} says arf!"
+end
+```
+
+* And now, we can expose information about the state of the object using instance methods.
+
+```ruby
+puts sparky.speak 								# => "Sparky says arf!"
+puts fido.speak 									# => "Fido says arf!"
+```
+
+---
+
+**Accessor Methods**
+
+* What if we wanted to print out only `sparky`'s name? We could try the code below (other code omitted):
+
+```ruby
+puts sparky.name
+```
+
+* However, we get an error.
+* A `NoMethodError` means that we called a method that doesn't exist or is unavailable to the object. If we want to access the object's name, which is stored in the `@name` instance variable, we have to create a method that will return the name. We can call it `get_name`, and its only job is to return the value in the `@name` instance variable.
+
+```ruby
+# good_dog.rb
+
+class GoodDog
+  def initialize(name)
+    @name = name
+  end
+  
+  def get_name
+    @name
+  end
+  
+  def speak
+    "#{@name} says arf!"
+  end
+end
+
+sparky = GoodDog.new("Sparky")
+puts sparky.speak
+puts sparky.get_name
+```
+
+* Ok, we've added our `get_name` method and it should return the value of our `@name` instance variable. Let's run this code and see if it works.
+* This is what we got back.
+
+```ruby
+Sparky says arf!
+Sparky
+```
+
+* It worked! We now have a _getter_ method. But what if we wanted to change `sparky`'s name? That's when we reach for a _setter_ method. It looks a lot like a getter method but with one small difference. Let's add it.
+
+```ruby
+# good_dog.rb
+
+class GoodDog
+  def initialize(name)
+    @name = name
+  end
+  
+  def get_name
+    @name
+  end
+  
+  def set_name=(name)
+    @name = name
+  end
+  
+  def speak
+    "#{@name} says arf!"
+  end
+end
+
+sparky = GoodDog.new("Sparky")
+puts sparky.speak
+puts sparky.get_name
+sparky.set_name = "Spartacus"
+puts sparky.get_name
+```
+
+* The output of this code is:
+
+```ruby
+Sparky says arf!
+Sparky
+Spartacus
+```
+
+* As you can see, we've successfully changed `sparky`'s name to the string "Spartacus". The first thing you should notice about the _setter_ method `set_name=` is that Ruby gives us a special syntax to use it. To use the `set_name=` method normally, we would expect to do this: `sparky.set_name=("Spartacus")`, where the entire "set_name=" is the method name, and the string "Spartacus" is the argument being passed in to the method. Ruby recognizes this is a _setter_ method and allows us to use the more natural assignment syntax: `sparky.set_name = "Spartacus"`. When you see this code, just realize there's a method called `set_name=` working behind the scenes, and we're just seeing some Ruby _syntactical sugar_.
+* Finally, as a convention, Rubyists typically want to name those _getter_ and _setter_ methods using the same name as the instance variable they are exposing and setting. We'll make the change to our code as well:
+
+```ruby
+# good_dog.rb
+
+class GoodDog
+  def initialize(name)
+    @name = name
+  end
+  
+  def name												# This was renamed from "get_name"
+    @name
+  end
+  
+  def name=(n)										# This was renamed from "set_name="
+    @name = n
+  end
+  
+  def speak
+    "#{@name} says arf!"
+  end
+end
+
+sparky = GoodDog.new("Sparky")
+puts sparky.speak
+puts sparky.name					# => "Sparky"
+sparky.name = "Spartacus"
+puts sparky.name					# => "Spartacus"
+```
+
+* You'll notice that writing those _getter_ and _setter_ methods took up a lot of room in our program for such a simple feature. And if we had other states we wanted to track, like height or weight, the class would be even longer. Because these methods are so commonplace, Ruby has a built-in way to automatically create these _getter_ and _setter_ methods for us, using the **attr_accessor** method. Check out this refactoring of the code from above.
+
+```ruby
+# good_dog.rb
+
+class GoodDog
+  attr_accessor :name
+  
+  def initialize(name)
+    @name = name
+  end
+  
+  def speak
+    "#{@name} says arf!"
+  end
+end
+
+sparky = GoodDog.new("Sparky")
+puts sparky.speak
+puts sparky.name						# => "Sparky"
+sparky.name = "Spartacus"
+puts sparky.name						# => "Spartacus"
+```
+
+* Our output is the same! The `attr_accessor` method takes a symbol as an argument, which it uses to create the method name for the `getter` and `setter` methods. That one line replaced two method definitions.
+* But what if we only want the `getter` method without the `setter` method? Then we would want to use the `attr_reader` method. It works the same way but only allows you to retreive the instance variable. And if you only want the setter method, you can use the `attr_writer` method. All of the `attr_*` methods take a `Symbol` as parameters; if there are more states you're tracking, you can use this syntax:
+
+```ruby
+attr_accessor :name, :height, :weight
+```
+
+---
+
+#### Exercises
+
+1. Create a class called MyCar. When you initialize a new instance or object of the class, allow the user to define some instance variables that tell us the year, color, and model of the car. Create an instance variable that is set to `0` during instantiation of the object to track the current speed of the car as well. Create instance methods that allow the car to speed up, brake, and shut the car off.
+
+```ruby
+class MyCar
+  attr_accessor :year, :color, :model
+  
+  def initialize(y, c, m)
+    @year = y
+    @color = c
+    @model = m
+    @speed = 0
+  end
+  
+  def speed_up
+    @speed += 1
+  end
+  
+  def brake
+    @speed -= 1
+  end
+  
+  def turn_off
+    @speed = 0
+  end
+end
+```
+
+Launch School's solution:
+
+```ruby
+class MyCar
+  
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+  end
+  
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+end
+
+lumina = MyCar.new(1997, 'chevy lumina', 'white')
+lumina.speed_up(20)
+lumina.current_speed
+lumina.speed_up(20)
+lumina.current_speed
+lumina.brake(20)
+lumina.current_speed
+lumina.brake(20)
+lumina.current_speed
+lumina.shut_down
+lumina.current_speed
+```
+
+2. Add an accessor method to your MyCar class to change and view the color of your car. Then add an accessor method that allows you to view, but not modify, the year of your car.
+
+```ruby
+class MyCar
+  attr_accessor :color		# additional code for being able to change and view the color
+  attr_reader :year				# additional code for viewing, but not modifying, the year
+  
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+  end
+  
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+end
+
+car = MyCar.new(2000, 'Toyota Camry', 'black')
+car.color # => 'black'
+car.year  # => 2000
+car.color = 'white'
+car.color # => 'white'
+car.year = 2001 # => NoMethodError
+```
+
+3. You want to create a nice interface that allows you to accurately describe the action you want your program to perform. Create a method called `spray_paint` that can be called on an object and will modify the color of the car.
+
+```ruby
+class MyCar
+  attr_accessor :color		# additional code for being able to change and view the color
+  attr_reader :year				# additional code for viewing, but not modifying, the year
+  
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+  end
+  
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+  
+  def spray_paint(paint_color)
+    @color = paint_color
+  end
+end
+
+car = MyCar.new(2000, "Toyota Camry", 'black')
+car.color # => 'black'
+car.spray_paint('white')
+car.color # => 'white'
+```
+
+Launch School's solution
+
+```ruby
+class MyCar
+  attr_accessor :color
+  attr_reader :year
+  
+  # ... rest of class left out for brevity
+  
+  def spray_paint(color)
+    self.color = color
+    puts "Your new #{color} paint job looks great!"
+  end
+end
+
+lumina.spray_paint('red')	 # => "Your new red paint job looks great!"
+```
 
