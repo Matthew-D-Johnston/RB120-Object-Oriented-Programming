@@ -612,3 +612,68 @@ end
 lumina.spray_paint('red')	 # => "Your new red paint job looks great!"
 ```
 
+---
+
+#### Classes and Objects: Part II
+
+---
+
+**Class Methods**
+
+* **Class methods** are methods we can call directly on the class itself, without having to instantiate any objects.
+* When defining a class method, we prepend the method name with the reserved word `self.`, like this:
+
+```ruby
+# good_dog.rb
+# ... rest of code ommitted for brevity
+
+def self.what_am_i 					# Class method definition
+  "I'm a GoodDog class!"
+end
+```
+
+* Then when we call the class method, we use the class name `GoodDog` followed by the method name, without even having to instantiate any objects, like this:
+
+```ruby
+GoodDog.what_am_i 					# => I'm a GoodDog class!
+```
+
+* Class methods are where we put functionality that does not pertain to individual objects. Objects contain state, and if we have a method that does not need to deal with states, then we can just use a class method, like our simple example. We'll take a look at a more useful example in the next section.
+
+---
+
+**Class Variables**
+
+* Just as instance variables capture information related to specific instances of classes (i.e., objects), we can create variables for an entire class that are appropriatelyl named **class variables**.
+* Class variables are created using two `@` symbols like so: `@@`. 
+
+```ruby
+class GoodDog
+  @@number_of_dogs = 0
+  
+  def initialize
+    @@number_of_dogs += 1
+  end
+  
+  def self.total_number_of_dogs
+    @@number_of_dogs
+  end
+end
+
+puts GoodDog.total_number_of_dogs 	# => 0
+
+dog1 = GoodDog.new
+dog2 = GoodDog.new
+
+puts GoodDog.total_number_of_dogs 	# => 2
+```
+
+* We have a class variable called `@@number_of_dogs`, which we initialize to 0. Then in our constructor (the `initialize` method), we increment that number by 1. 
+* Remember that `initialize` gets called every time we instantiate a new object via the `new` method. This also demonstrates that we can access class variables from within an instance method (`initialize` is an instance method). 
+* Finally, we just return the value of the class variable in the class method `self.total_number_of_dogs`. 
+* This is an example of using a class variable and a class method to keep track of a class level detail that pertains only to the class, and not to individual objects.
+
+---
+
+**Constants**
+
