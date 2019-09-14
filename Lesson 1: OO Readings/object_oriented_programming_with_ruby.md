@@ -806,5 +806,125 @@ irb :001 > GoodDog
 
 1. Add a class method to your MyCar class that calculates the gas mileage of any car.
 
+```ruby
+class MyCar
+  attr_accessor :color	# additional code for being able to change and view the color
+  attr_reader :year			# additional code for viewing, but not modifying, the year
+  attr_reader :model 		# same as for the year
+  
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+  end
+  
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+  
+  def spray_paint(paint_color)
+    @color = paint_color
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
+  end
+end
+
+MyCar.gas_mileage(13, 351) 	# => "27 miles per gallon of gas"
+```
+
+2. Override the to_s method to create a user friendly print out of your object.
+
+```ruby
+class MyCar
+  
+  # code omitted for brevity
+  
+  def to_s
+    puts "My car is a #{color} #{year} #{model}"
+  end
+end
+```
+
+3. When running the following code...
+
+```ruby
+class Person
+  attr_reader :name
+  def initialize(name)
+    @name = name
+  end
+end
+
+bob = Person.new("Steve")
+bob.name = "Bob"
+```
+
+We get the following error...
+
+```ruby
+test.rb:9:in `<main>': undefined method `name=' for
+	#<Person:0x007fef41838a28 @name="Steve"> (NoMethodError)
+```
+
+Why do we get this error and how do we fix it?
 
 
+
+My response: We get this error because we did not include a setter method for the instance variables of the `Person` class. We can fix this by changing the `attr_reader` method to a `attr_accessor` method. Thus, we have:
+
+```ruby
+class Person
+  attr_accessor :name
+  def initialize(name)
+    @name = name
+  end
+end
+
+bob = Person.new("Steve")
+bob.name = "Bob"
+```
+
+Launch School's explanation: We get this error because `attr_reader` only creates a getter method. When we try to reassign the name instance variable to `"Bob"`, we need a setter method called `name==`. We can get this by changing `attr_reader` to `attr_accessor` or `attr_writer` if we don't intend to use the getter functionality.
+
+```ruby
+class Person
+  attr_accessor :name
+  # attr_writer :name ## => This also works but doesn't allow getter access
+  def initialize(name)
+    @name = name
+  end
+end
+
+bob = Person.new("Steve")
+bob.name = "Bob"
+```
+
+---
+
+#### Class Inheritance
+
+---
+
+
+
+
+
+ 
