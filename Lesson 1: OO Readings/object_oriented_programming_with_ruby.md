@@ -1454,12 +1454,481 @@ ArgumentError: wrong number of arguments (1 for 0)
 
 **Exercises**
 
+1. Create a superclass called `Vehicle` for your `MyCar` class to inherit from and move the behaviour that isn't specific to the `MyCar` class to the superclass. Create a constant in your `MyCar` class that stores information about the vehicle that makes it different from other types of Vehicles.
+
+   
+
+   Then create a new class called `MyTruck` that inherits from your superclass that also has a constant defined that separates it from the MyCar class in some way.
+
+   
+
+   My response:
+
+```ruby
+class Vehicle
+  attr_accessor :color	# additional code for being able to change and view the color
+  attr_reader :year			# additional code for viewing, but not modifying, the year
+  attr_reader :model 		# same as for the year
+  
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+  end
+  
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+  
+  def spray_paint(paint_color)
+    @color = paint_color
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
+  end
+end
+
+class MyCar < Vehicle
+  INFO = { year: 0, model: '', color: '', current_speed: 0, vehicle_type: 'car' }
+end
+
+class MyTruck < Vehicle
+  INFO = { year: 0, model: '', color: '', current_speed: 0, vehicle_type: 'truck' }
+end
+```
+
+​		Launch School's response:
+
+```ruby
+class Vehicle
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
+  end
+end
+
+class MyCar < Vehicle
+  NUMBER_OF_DOORS = 4
+  
+  def to_s
+    puts "My car is a #{color} #{year} #{model}"
+  end
+end
+
+class MyTruck < Vehicle
+  NUMBER_OF_DOORS = 2
+  
+  def to_s
+    puts "My truck is a #{color} #{year} #{model}"
+  end
+end
+```
 
 
 
+2. Add a class variable to your superclass that can keep track of the number of objects created that inherit from the superclass. Create a method to print out the value of this class variable as well.
 
 
 
+​		My response:
+
+```ruby
+class Vehicle
+  # code omitted for brevity
+  
+  @@number_of_vehicles = 0
+	
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+    @@number_of_vehicles += 1
+  end
+  
+  def self.total_number_of_vehicles
+    @@number_of_vehicles
+  end
+  
+  # code omitted for brevity
+end
+```
+
+​		Launch School's response:
+
+```ruby
+class Vehicle
+  @@number_of_vehicles = 0
+  
+  def self.number_of_vehicles
+    puts "This program has created #{@@number_of_vehicles} vehicles"
+  end
+  
+  def initialize
+    @@number_of_vehicles += 1
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
+  end
+end
+
+class MyCar < Vehicle
+	NUMBER_OF_DOORS = 4
+  # code omitted for brevity...
+end
+
+class MyTruck < Vehicle
+  NUMBER_OF_DOORS = 2
+end
+```
 
 
- 
+
+3. Create a module that you can mix in to ONE of your subclasses that describes a behaviour unique to that subclass.
+
+
+
+​	My response:
+
+```ruby
+module Haulerable
+  def haul
+    "I'm hauling something"
+  end
+end
+
+class MyTruck < Vehicle
+  NUMBER_OF_DOORS = 2
+  
+  include Haulerable
+  
+  def to_s
+    puts "My truck is a #{color} #{year} #{model}"
+  end
+end
+```
+
+
+
+​		Launch School's response:
+
+```ruby
+module Towable
+  def can_tow?(pounds)
+    pounds < 2000 ? true : false
+  end
+end
+
+class Vehicle
+  @@number_of_vehicles = 0
+  
+  def self.number_of_vehicles
+    puts "This program has created #{@@number_of_vehicles} vehicles"
+  end
+  
+  def initialize
+    @@number_of_vehicles += 1
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallon} miles per gallon of gas"
+  end
+end
+
+class MyCar < Vehicle
+  NUMBER_OF_DOORS = 4
+  # code omitted for brevity...
+end
+
+class MyTruck < Vehicle
+  include Towable
+  
+  NUMBER_OF_DOORS = 2
+end
+```
+
+
+
+4.  Print to the screen your method lookup for the classes that you have created.
+
+
+
+​		My response:
+
+```ruby
+puts MyCar.ancestors
+# MyCar
+# Vehicle
+# Object
+# Kernel
+# BasicObject
+puts "-------"
+
+puts MyTruck.ancestors
+# MyTruck
+# Haulerable
+# Vehicle
+# Object
+# Kernel
+# BasicObject
+puts "-------"
+
+puts Vehicle.ancestors
+# Vehicle
+# Object
+# Kernel
+# BasicObject
+```
+
+
+
+​		Launch School's response:
+
+```ruby
+# code omitted for brevity...
+
+puts MyCar.ancestors
+puts MyTruck.ancestors
+puts Vehicle.ancestors
+```
+
+
+
+5. Move all of the methods from the MyCar class that also pertain to the MyTruck class into the Vehicle class. Make sure that all of your previous method calls are working when you are finished.
+
+   
+
+   Wasn't sure what was meant by this exercise at first, but after looking at the solution I think that I had already done this at the start. Anyways, here's my code so far:
+
+```ruby
+class Vehicle
+  attr_accessor :color  # additional code for being able to change and view the color
+  attr_reader :year     # additional code for viewing, but not modifying, the year
+  attr_reader :model    # same as for the year
+  
+  @@number_of_vehicles = 0
+
+  def initialize(year, model, color)
+    @year = year
+    @model = model
+    @color = color
+    @current_speed = 0
+    @@number_of_vehicles += 1
+  end
+  
+  def self.total_number_of_vehicles
+    @@number_of_vehicles
+  end
+
+  def speed_up(number)
+    @current_speed += number
+    puts "You push the gas and accelerate #{number} mph."
+  end
+  
+  def brake(number)
+    @current_speed -= number
+    puts "You push the brake and decelerate #{number} mph."
+  end
+  
+  def current_speed
+    puts "You are now going #{@current_speed} mph."
+  end
+  
+  def shut_down
+    @current_speed = 0
+    puts "Let's park this bad boy!"
+  end
+  
+  def spray_paint(paint_color)
+    @color = paint_color
+  end
+  
+  def self.gas_mileage(gallons, miles)
+    puts "#{miles / gallons} miles per gallon of gas"
+  end
+end
+
+module Haulerable
+  def haul
+    "I'm hauling something"
+  end
+end
+
+class MyCar < Vehicle
+  NUMBER_OF_DOORS = 4
+  
+  def to_s
+    puts "My car is a #{color} #{year} #{model}"
+  end
+end
+
+class MyTruck < Vehicle
+  NUMBER_OF_DOORS = 2
+
+  include Haulerable
+  
+  def to_s
+    puts "My truck is a #{color} #{year} #{model}"
+  end
+end
+
+car = MyCar.new(2000, "Toyota Yaris", 'white')
+truck = MyTruck.new(2005, "GMC Sierra", 'black')
+car.to_s
+truck.to_s
+
+p Vehicle.total_number_of_vehicles
+p truck.haul
+
+puts MyCar.ancestors
+puts "------"
+puts MyTruck.ancestors
+puts "------"
+puts Vehicle.ancestors
+```
+
+
+
+6. Write a method called `age` that calls a private method to calculate the age of the vehicle. Make sure the private method is not available from outside of the class. You'll need to use Ruby's built-in Time class to help.
+
+
+
+​		My response:
+
+```ruby
+class Vehicle
+  # code omitted for brevity...
+  
+  def age
+    "This vehicle is #{calculate_age} years old."
+  end
+    
+  private
+  
+  def calculate_age
+    Time.new.year - year
+  end
+end
+```
+
+
+
+​		Launch School's response:
+
+```ruby
+class Vehicle
+  # code omitted for brevity...
+  def age
+    "Your #{self.model} is #{years_old} years old."
+  end
+  
+  private
+  
+  def years_old
+    Time.now.year - self.year
+  end
+end
+
+# code omitted for brevity...
+
+puts lumina.age # => "Your chevy lumina is 17 years old"
+```
+
+
+
+7. Create a class 'Student' with attributes `name` and `grade`. Do NOT make the grade getter public, so `joe.grade` will raise an error. Create a `better_grade_than?` method, that you can call like so...
+
+```ruby
+puts "Well done!" if joe.better_grade_than?(bob)
+```
+
+
+
+​		My response:
+
+```ruby
+class Student
+  attr_accessor :name
+  
+  def initialize(name, grade)
+    @name = name
+    @grade = grade
+  end
+  
+  def better_grade_than?(student)
+    self.grade > student.grade
+  end
+    
+  protected
+  
+  attr_accessor :grade
+end
+```
+
+
+
+​		Launch School's response:
+
+```ruby
+class Student
+  def initialize(name, grade)
+    @name = name
+    @grade = grade
+  end
+  
+  def better_grade_than?(other_student)
+    grade > other_student.grade
+  end
+  
+  protected
+  
+  def grade
+    @grade
+  end
+end
+
+joe = Student.new("Joe", 90)
+bob = Student.new("Bob", 84)
+puts "Well done!" if joe.better_grade_than?(bob)
+```
+
+
+
+8. Given the following code...
+
+```ruby
+bob = Person.new
+bob.hi
+```
+
+​		And the corresponding error message...
+
+```ruby
+NoMethodError: private method `hi' called for #<Person:0x007ff61dbb79f0>
+from (irb):8
+from /usr/local/rvm/rubies/ruby-2.0.0-rc2/bin/irb:16:in `<main>'
+```
+
+What is the problem and how would you go about fixing it.
+
+
+
+My response: the problem is that `hi` is a private method, and thus can only be accessed with the `Person` class. In order to fix the problem and make the `hi` method available outside of the class, we must place the definition of the `hi` method above the keyword `private`.
+
