@@ -20,29 +20,15 @@ class Move
   end
 
   def >(other_move)
-    if rock?
-      return true if other_move.scissors?
-      return false
-    elsif paper?
-      return true if other_move.rock?
-      return false
-    elsif scissors?
-      return true if other_move.paper?
-      return false
-    end
+    (rock? && other_move.scissors?) ||
+      (paper? && other_move.rock?) ||
+      (scissors? && other_move.paper?)
   end
 
   def <(other_move)
-    if rock?
-      return true if other_move.paper?
-      return false
-    elsif paper?
-      return true if other_move.scissors?
-      return false
-    elsif scissors?
-      return true if other_move.rock?
-      return false
-    end
+    (rock? && other_move.paper?) ||
+      (paper? && other_move.scissors?) ||
+      (scissors? && other_move.rock?)
   end
 
   def to_s
@@ -61,7 +47,7 @@ end
 class Human < Player
   def set_name
     n = ""
-    loop do 
+    loop do
       puts "What's your name?"
       n = gets.chomp
       break unless n.empty?
@@ -108,10 +94,12 @@ class RPSGame
     puts "Thanks for playing Rock, Paper, Scissors. Good bye!"
   end
 
-  def display_winner
+  def display_moves
     puts "#{human.name} chose #{human.move}."
     puts "#{computer.name} chose #{computer.move}."
+  end
 
+  def display_winner
     if human.move > computer.move
       puts "#{human.name} won!"
     elsif human.move < computer.move
@@ -130,8 +118,8 @@ class RPSGame
       puts "Sorry, must be y or n."
     end
 
-    return true if answer == 'y'
-    return false
+    return false if answer.downcase == 'n'
+    return true if answer.downcase == 'y'
   end
 
   def play
@@ -140,6 +128,7 @@ class RPSGame
     loop do
       human.choose
       computer.choose
+      display_moves
       display_winner
       break unless play_again?
     end
@@ -149,4 +138,3 @@ class RPSGame
 end
 
 RPSGame.new.play
-
