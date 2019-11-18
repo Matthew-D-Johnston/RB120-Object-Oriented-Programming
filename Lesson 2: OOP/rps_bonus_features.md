@@ -207,3 +207,71 @@ Other changes were minor.
 **Problem:**  
 
 What would happen if we went even further and introduced 5 more classes, one for each move: `Rock`, `Paper`, `Scissors`, `Lizard`, and `Spock`. How would the code change? Can you make it work? After you're done, can you talk about whether this was a good design decision? What are the pros/cons?
+
+---
+
+```ruby
+class Rock
+  attr_reader :name, :prey, :predators
+  
+  def initialize
+    @name = 'rock'
+    @prey = ['lizard', 'scissors']
+    @predators = ['paper', 'spock']
+  end
+end
+
+...
+```
+
+Then...
+
+```ruby
+def display_winner
+  if human.move.prey.include?(computer.move.name)
+    puts "#{human.name} won!"
+  elsif human.move.predators.include?(computer.move.name)
+    puts "#{computer.name} won!"
+  else
+    puts "It's a tie!"
+  end
+end
+```
+
+Also...
+
+```ruby
+class Player
+  attr_accessor :move, :name, :score
+
+  POSSIBLE_MOVES = { rock: Rock.new, paper: Paper.new,
+                     scissors: Scissors.new, lizard: Lizard.new,
+                     spock: Spock.new }
+
+  def initialize
+    set_name
+    @score = 0
+  end
+end
+```
+
+And...
+
+```ruby
+  def choose
+    choice = nil
+    loop do
+      puts "Please choose rock, paper, scissors, lizard, or spock:"
+      choice = gets.chomp.to_sym
+      break if POSSIBLE_MOVES.keys.include?(choice)
+      puts "Sorry, invalid choice."
+    end
+
+    self.move = POSSIBLE_MOVES[choice]
+  end
+
+  def choose
+    self.move = POSSIBLE_MOVES.values.sample
+  end
+```
+
