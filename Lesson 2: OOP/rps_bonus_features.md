@@ -357,5 +357,46 @@ Now create a new `display_move_history` method in the `RPSGame` class.
   end
 ```
 
+---
+
+### RPS Bonus Feature: Computer personalities
+
+---
+
+**Problem:**  
+
+We have a list of robot names for our `Computer` class, but other than the name, there's really nothing different about each of them. It'd be interesting to explore how to build different personalities for each robot. For example, R2D2 can always choose "rock". Or, "Hal" can have a very high tendency to choose "scissors", and rarely "rock", but never "paper". You can come up with the rules or personalities for each robot. How would you approach a feature like this?
+
+---
+
+Should be able to include this functionality within the `choose` method of the `Computer` class, perhaps by using a `case` statement...
+
+```ruby
+class Computer < Player
+  def set_name
+    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
+  end
+
+  def choose
+    case name
+    when "R2D2"
+      self.move = Rock.new
+    when "Hal"
+      self.move = [Scissors.new, Scissors.new, Scissors.new, Rock.new, Lizard.new, 	
+        					 Lizard.new, Spock.new, Spock.new].sample
+    when "Chappie"
+      self.move = [Rock.new, Paper.new, Scissors.new].sample
+    when "Sonny"
+      self.move = [Rock.new, Paper.new, Scissors.new, Lizard.new, Lizard.new, Spock.new, 
+        					 Spock.new].sample
+    when "Number 5"
+    	self.move = POSSIBLE_MOVES.values.sample
+    end
+    
+    move_history << move.name
+  end
+end
+```
+
 
 
