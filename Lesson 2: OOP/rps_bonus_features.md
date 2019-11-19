@@ -275,3 +275,87 @@ And...
   end
 ```
 
+---
+
+### RPS Bonus Feature: Keep track of a history of moves
+
+---
+
+**Problem:**  
+
+As long as the user doesn't quit, keep track of a history of moves by both the human and computer. What data structure will you reach for? Will you use a new class, or an existing class? What will the display output look like?
+
+---
+
+**Data Structure:**  
+
+The moves will be stored in an array format, which will be encapsulted in the `Player` class under the class variable name of `move_history` and initiatialized whenever a new player is created. Thus, each player will have their own move history. For example,
+
+```ruby
+Matt.move_history => ['rock', 'lizard', 'spock']
+```
+
+The display output will be a table where the rows correspond to rounds of the RPS game and the columns correspond to the two names. Populating the table will be the correpsonding moves for each round and player. For example,
+
+```
+			 Matt			  Hal
+	1   'rock'		'lizard'
+	2		'spock'		'paper'
+```
+
+Every time the `choose` method is called, the move will be added to the respective player's move history.
+
+```ruby
+  def choose
+    choice = nil
+    loop do
+      puts "Please choose rock, paper, scissors, lizard, or spock:"
+      choice = gets.chomp.to_sym
+      break if POSSIBLE_MOVES.keys.include?(choice)
+      puts "Sorry, invalid choice."
+    end
+
+    self.move = POSSIBLE_MOVES[choice]
+    move_history << self.move.name
+  end
+
+# and for the computer,
+
+  def choose
+    self.move = POSSIBLE_MOVES.values.sample
+    move_history << self.move.name
+  end
+```
+
+Here is the new `Player` class definition:
+
+```ruby
+class Player
+  attr_accessor :move, :name, :score, :move_history
+
+  POSSIBLE_MOVES = { rock: Rock.new, paper: Paper.new,
+                     scissors: Scissors.new, lizard: Lizard.new,
+                     spock: Spock.new }
+
+  def initialize
+    set_name
+    @score = 0
+    @move_history = []
+  end
+end
+```
+
+Now create a new `display_move_history` method in the `RPSGame` class.
+
+```ruby
+  def display_move_history
+    puts " "*6 + "#{human.name}" + " "*(20 - human.name.length) + "#{computer.name}"
+  
+    1.upto(human.move_history.size) do |n|
+      puts "#{n}" + " "*(6 - n.to_s.length) + "#{human.move_history[n - 1]}" + " "*(20 - (human.move_history[n - 1].length)) + "#{computer.move_history[n - 1]}"
+    end
+  end
+```
+
+
+
