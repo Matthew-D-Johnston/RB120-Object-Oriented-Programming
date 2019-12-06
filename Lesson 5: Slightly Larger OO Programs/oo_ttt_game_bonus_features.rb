@@ -1,8 +1,14 @@
-# oo_ttt_game_improvements.rb
+# oo_ttt_game_bonus_features.rb
 
 require 'pry'
 
-class Board
+class Marker
+  INITIAL_MARKER = ' '
+  HUMAN_MARKER = 'X'
+  COMPUTER_MARKER = 'O'
+end
+
+class Board < Marker
   attr_reader :squares
 
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
@@ -41,7 +47,21 @@ class Board
   end
 
   def reset
-    (1..9).each { |key| @squares[key] = Square.new }
+    (1..9).each { |key| @squares[key] = Square.new(key) }
+  end
+
+  def possible_winning_square
+    possible_winner = nil
+
+    WINNING_LINES.each do |line|
+      squares = @squares.values_at(*line)
+
+      if two_identical_human_markers_and_one_initial_marker?(squares)
+        possible_winner = squares.select(&:unmarked?)
+      end
+    end
+
+    possible_winner ? possible_winner.first.square_key : nil
   end
 
   # rubocop:disable Metrics/AbcSize
@@ -68,15 +88,19 @@ class Board
     return false if markers.size != 3
     markers.min == markers.max
   end
+
+  def two_identical_human_markers_and_one_initial_marker?(squares)
+    markers = squares.map(&:marker)
+    markers.count(INITIAL_MARKER) == 1 && markers.count(HUMAN_MARKER) == 2
+  end
 end
 
-class Square
-  INITIAL_MARKER = " "
+class Square < Marker
+  attr_accessor :marker, :square_key
 
-  attr_accessor :marker
-
-  def initialize(marker=INITIAL_MARKER)
+  def initialize(square_key, marker=INITIAL_MARKER)
     @marker = marker
+    @square_key = square_key
   end
 
   def to_s
@@ -93,16 +117,23 @@ class Square
 end
 
 class Player
-  attr_reader :marker
+  attr_reader :marker, :score
 
   def initialize(marker)
     @marker = marker
+    @score = 0
+  end
+
+  def add_point
+    @score += 1
+  end
+
+  def reset_score
+    @score = 0
   end
 end
 
-class TTTGame
-  HUMAN_MARKER = "X"
-  COMPUTER_MARKER = "O"
+class TTTGame < Marker
   FIRST_TO_MOVE = HUMAN_MARKER
 
   attr_reader :board, :human, :computer
@@ -128,8 +159,11 @@ class TTTGame
       end
 
       display_result
+      update_score
+      display_score
 
       break unless play_again?
+
       reset
       display_play_again_message
     end
@@ -160,8 +194,18 @@ class TTTGame
     display_board
   end
 
+  def joinor(unmarked, separator=", ", conj="or")
+    if unmarked.size == 1
+      unmarked.first.to_s
+    elsif unmarked.size == 2
+      "#{unmarked.first} #{conj} #{unmarked.last}"
+    else
+      "#{unmarked[0..-2].join(separator)}#{separator}#{conj} #{unmarked.last}"
+    end
+  end
+
   def human_moves
-    puts "Choose a square  (#{board.unmarked_keys.join(', ')}): "
+    puts "Choose a square (#{joinor(board.unmarked_keys)})"
     square = nil
 
     loop do
@@ -174,7 +218,11 @@ class TTTGame
   end
 
   def computer_moves
-    board[board.unmarked_keys.sample] = computer.marker
+    if human_player_about_to_win?
+      board[board.possible_winning_square] = computer.marker
+    else
+      board[board.unmarked_keys.sample] = computer.marker
+    end
   end
 
   def current_player_moves
@@ -187,8 +235,36 @@ class TTTGame
     end
   end
 
+  def human_player_about_to_win?
+    board.possible_winning_square ? true : false
+  end
+
   def human_turn?
     @current_marker == HUMAN_MARKER
+  end
+
+  def update_score
+    case board.winning_marker
+    when HUMAN_MARKER
+      human.add_point
+    when COMPUTER_MARKER
+      computer.add_point
+    end
+  end
+
+  def display_score
+    puts "You have #{human.score} point(s}."
+    puts "The computer has #{computer.score} point(s)."
+
+    if human.score == 5
+      puts "You have won the set!"
+    elsif computer.score == 5
+      puts "The computer has won the set!"
+    else
+      puts "The first player to five points wins the set."
+    end
+
+    puts ""
   end
 
   def display_result
@@ -204,17 +280,26 @@ class TTTGame
     end
   end
 
-  def play_again?
+  def play_again_response
     answer = nil
 
     loop do
-      puts "Would you like to play again? (y/n)"
       answer = gets.chomp.downcase
       break if %w(y n).include? answer
-      puts "Sorry, must be y or n"
+      puts "Sorry, must be y or n."
     end
 
-    answer == 'y'
+    answer
+  end
+
+  def play_again?
+    if human.score < 5 && computer.score < 5
+      puts "Continue playing? (y/n)"
+    else
+      puts "Woud you like to play another set? (y/n)"
+    end
+
+    play_again_response == 'y'
   end
 
   def clear
@@ -225,6 +310,10 @@ class TTTGame
     board.reset
     clear
     @current_marker = FIRST_TO_MOVE
+    while [human.score, computer.score].include?(5)
+      human.reset_score
+      computer.reset_score
+    end
   end
 
   def display_play_again_message
