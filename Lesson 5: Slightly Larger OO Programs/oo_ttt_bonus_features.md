@@ -345,11 +345,235 @@ That has cleared things up, and I went back up to change the methods, exchanging
 
 ---
 
-##### 4. Computer AI: Offense
+##### 4. Computer AI: Offense  
 
+The defensive minded AI is pretty cool, but it's still not performing as well as it could because if there are no impending threats, it will pick a square at random. We'd like to make a slight improvement on that. We're not going to add in any complicated algorithm (there's an extra bonus below on that), but all we want to do is piggy back on our `find_at_risk_square` from bonus #3 above and turn it into an attacking mechanism as well. The logic is simple: if the computer already has 2 in a row, then fill in the 3rd square, as opposed to moving at random.  
 
+**My Solution:**  
 
+I think I should be able to rework my `two_identical_human_markers_and_one_initial_marker?(squares)` method above, in order to generate a more offensive-minded computer player. But we shall rename it and add a new parameter that allows for us to specify which player marker to check. Call it `two_identical_markers_and_one_initial_marker?(squares, player_marker)`. 
 
+```ruby
+def two_identical_markers_and_one_initial_marker?(squares, player_marker)
+  markers = squares.map(&:marker)
+  markers.count(INITIAL_MARKER) == 1 && markers.count(player_marker) == 2
+end
+```
+
+Let's step back for a second and take a look at the `TTTGame#computer_moves` method. We are going to need a method named `computer_player_about_to_win?`, which will then be implemented in the conditional statement within the `computer_moves` method definition.  
+
+Right now, for the `human_player_about_to_win?` method we have:
+
+```ruby
+def human_player_about_to_win?
+  board.possible_winning_square ? true : false
+end
+```
+
+We can basically just reformat this method, so that we pass an argument to it that will specify which player is about to win, by using the player's specific marker.
+
+```ruby
+def player_about_to_win?(player_marker)
+  board.possible_winning_square(player_marker) ? true : false
+end
+```
+
+This means that we will need to redefine the `Board#possible_winning_square` method with a parameter as well.
+
+```ruby
+def possible_winning_square(player_marker)
+  possible_winner = nil
+
+  WINNING_LINES.each do |line|
+    squares = @squares.values_at(*line)
+
+    if two_identical_markers_and_one_initial_marker?(squares, player_marker)
+      possible_winner = squares.select(&:unmarked?)
+    end
+  end
+
+  possible_winner ? possible_winner.first.square_key : nil
+end
+```
+
+So, we can now redefine our `TTTGame#computer_moves` method:
+
+```ruby
+def computer_moves
+  if player_about_to_win?(HUMAN_MARKER)
+    board[board.possible_winning_square(HUMAN_MARKER)] = computer.marker
+  elsif player_about_to_win?(COMPUTER_MARKER)
+    board[board.possible_winning_square(COMPUTER_MARKER)] = computer.marker
+  else
+    board[board.unmarked_keys.sample] = computer.marker
+  end
+end
+```
+
+The code appears to be working, but Rubocop is now complaining about the "Assignment Branch Condition size" for the `computer_moves` method being too high.
+
+```ruby
+def computer_moves
+  if player_about_to_win?(HUMAN_MARKER)
+    board[board.possible_winning_square(HUMAN_MARKER)] = computer.marker
+  elsif player_about_to_win?(COMPUTER_MARKER)
+    board[board.possible_winning_square(COMPUTER_MARKER)] = computer.marker
+  else
+    board[board.unmarked_keys.sample] = computer.marker
+  end
+end
+```
+
+Perhaps, we could create a simple `computer_marker_board_assignment` method.
+
+```ruby
+def computer_marker_assigner(board_assignment_qualifier)
+  board[board_assignment_qualifier] = computer.marker
+end
+```
+
+Then we can redefine the `computer_moves` method as follows:
+
+```ruby
+def computer_moves
+  if player_about_to_win?(HUMAN_MARKER)
+    computer_marker_assigner(board.possible_winning_square(HUMAN_MARKER))
+  elsif player_about_to_win?(COMPUTER_MARKER)
+    computer_marker_assigner(board.possible_winning_square(COMPUTER_MARKER))
+  else
+    computer_marker_assigner(board.unmarked_keys.sample)
+  end
+end
+```
+
+That worked to silence Rubocop on that issue.
+
+---
+
+##### 5. Computer turn refinements  
+
+**a)** We actually have the offense and defense steps backwards. In other words, if the computer has a chance to win, it should take that move rather than defend. As we have coded it now, it will defend first. Update the code so that it plays the offensive move first.  
+
+**My Solution:**  
+
+This is just a matter of exchanging some of the arguments passed to the `player_about_to_win?` method within our `TTTGame#computer_moves` method definition. Currently, we have the `HUMAN_MARKER` as the argument pertaining to the first conditional use of `player_about_to_win?`, but it should be `COMPUTER_MARKER`. This will ensure that the program first checks if the computer has a chance to win before defending. Thus, we redefine the `computer_moves` method in the following way:
+
+```ruby
+def computer_moves
+  if player_about_to_win?(COMPUTER_MARKER)
+    computer_marker_assigner(board.possible_winning_square(COMPUTER_MARKER))
+  elsif player_about_to_win?(HUMAN_MARKER)
+    computer_marker_assigner(board.possible_winning_square(HUMAN_MARKER))
+  else
+    computer_marker_assigner(board.unmarked_keys.sample)
+  end
+end
+```
+
+---
+
+**b)** We can make one more improvement: pick square #5 if it's available. The AI for the computer should go like this: first, pick the winning move; then, defend; then pick square #5; then pick a random square.  
+
+**My Solution:**  
+
+First, we will need to define a method to see if square #5 is available. Something like, `square_5_available?`.
+
+```ruby
+def square_5_available?
+  board[5] == INITIAL_MARKER
+end
+```
+
+Then we add another conditional to the `computer_moves` method.
+
+```ruby
+def computer_moves
+  if player_about_to_win?(COMPUTER_MARKER)
+    computer_marker_assigner(board.possible_winning_square(COMPUTER_MARKER))
+  elsif player_about_to_win?(HUMAN_MARKER)
+    computer_marker_assigner(board.possible_winning_square(HUMAN_MARKER))
+  elsif square_5_available?
+    computer_marker_assigner(5)
+  else
+    computer_marker_assigner(board.unmarked_keys.sample)
+  end
+end
+```
+
+It appears that I need to first create a `[]` method in the `Board` class.
+
+```ruby
+def [](key)
+  @squares[key].marker
+end
+```
+
+---
+
+**c)** Can you change the game so that the computer moves first? Can you make this a setting at the top (i.e. a constant), so that you could play the game with either player or computer going first? Can you make it so that if the constant is set to "choose", then your game will prompt the user to determine who goes first? Valid options for the constant can be "player", "computer", or "choose".  
+
+**My Solution:**  
+
+We already have the `FIRST_TO_MOVE` constant defined at the top of the `TTTGame` class definition, which we can currently set to `HUMAN_MARKER` or `COMPUTER_MARKER` depending on which player we want to go first. If we want to introduce the option for the player to choose will the program is running we will need to define a `choose_first_to_move` method.
+
+```ruby
+def choose_first_to_move
+  puts "Choose who goes first (y for 'you' or c for 'computer'): "
+	choice = nil
+  
+  loop do
+  	choice = gets.chomp.downcase
+    break if choice == 'y' || choice == 'c'
+    puts "Sorry, invalid choice. Choose y or c: "
+  end
+  
+  choice == 'y' ? HUMAN_MARKER : COMPUTER_MARKER
+  clear
+end 
+```
+
+Now, I will add a `CHOOSE` constant to the `Marker` class.
+
+```ruby
+class Marker
+  INITIAL_MARKER = ' '
+  HUMAN_MARKER = 'X'
+  COMPUTER_MARKER = 'O'
+  CHOOSE = nil
+end
+```
+
+Now, I can set my `FIRST_TO_MOVE` constant to `CHOOSE`.  
+
+Then, we need to define a `set_current_marker` setter method for our `@current_marker` instance variable.
+
+```ruby
+def set_current_marker(marker)
+  @current_marker = marker
+end
+```
+
+Then, we will add a new line to our `TTTGame#play` method, at the top of our first `loop`.
+
+```ruby
+ def play
+    clear
+    display_welcome_message
+
+    loop do
+      set_current_marker(choose_first_to_move) if FIRST_TO_MOVE == CHOOSE
+      display_board
+      
+      # ... rest of code omitted for brevity
+```
+
+This allows us to only invoke the `set_current_marker` method if `FIRST_TO_MOVE == CHOOSE`. If the `FIRST_TO_MOVE` constant is set to one of our other options, `HUMAN_MARKER` or `COMPUTER_MARKER`, then that line will be skipped.
+
+---
+
+#### 2. Allow the player to pick any marker.
+
+---
 
 
 

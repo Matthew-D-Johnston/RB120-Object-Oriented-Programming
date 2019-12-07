@@ -6,6 +6,7 @@ class Marker
   INITIAL_MARKER = ' '
   HUMAN_MARKER = 'X'
   COMPUTER_MARKER = 'O'
+  CHOOSE = nil
 end
 
 class Board < Marker
@@ -18,6 +19,10 @@ class Board < Marker
   def initialize
     @squares = {}
     reset
+  end
+
+  def [](key)
+    @squares[key].marker
   end
 
   def []=(key, player_marker)
@@ -50,13 +55,13 @@ class Board < Marker
     (1..9).each { |key| @squares[key] = Square.new(key) }
   end
 
-  def possible_winning_square
+  def possible_winning_square(player_marker)
     possible_winner = nil
 
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
 
-      if two_identical_human_markers_and_one_initial_marker?(squares)
+      if two_identical_markers_and_one_initial_marker?(squares, player_marker)
         possible_winner = squares.select(&:unmarked?)
       end
     end
@@ -89,9 +94,9 @@ class Board < Marker
     markers.min == markers.max
   end
 
-  def two_identical_human_markers_and_one_initial_marker?(squares)
+  def two_identical_markers_and_one_initial_marker?(squares, player_marker)
     markers = squares.map(&:marker)
-    markers.count(INITIAL_MARKER) == 1 && markers.count(HUMAN_MARKER) == 2
+    markers.count(INITIAL_MARKER) == 1 && markers.count(player_marker) == 2
   end
 end
 
@@ -134,9 +139,10 @@ class Player
 end
 
 class TTTGame < Marker
-  FIRST_TO_MOVE = HUMAN_MARKER
+  FIRST_TO_MOVE = CHOOSE # HUMAN_MARKER, COMPUTER_MARKER, or CHOOSE
 
   attr_reader :board, :human, :computer
+  attr_writer :current_marker
 
   def initialize
     @board = Board.new
@@ -150,6 +156,7 @@ class TTTGame < Marker
     display_welcome_message
 
     loop do
+      @current_marker = choose_first_to_move if FIRST_TO_MOVE == CHOOSE
       display_board
 
       loop do
@@ -189,6 +196,20 @@ class TTTGame < Marker
     puts ""
   end
 
+  def choose_first_to_move
+    puts "Choose who goes first (y for 'you' or c for 'computer'): "
+    choice = nil
+
+    loop do
+      choice = gets.chomp.downcase
+      break if choice == 'y' || choice == 'c'
+      puts "Sorry, invalid choice. Choose y or c: "
+    end
+
+    clear
+    choice == 'y' ? HUMAN_MARKER : COMPUTER_MARKER
+  end
+
   def clear_screen_and_display_board
     clear
     display_board
@@ -217,11 +238,19 @@ class TTTGame < Marker
     board[square] = human.marker
   end
 
+  def computer_marker_assigner(board_assignment_qualifier)
+    board[board_assignment_qualifier] = computer.marker
+  end
+
   def computer_moves
-    if human_player_about_to_win?
-      board[board.possible_winning_square] = computer.marker
+    if player_about_to_win?(COMPUTER_MARKER)
+      computer_marker_assigner(board.possible_winning_square(COMPUTER_MARKER))
+    elsif player_about_to_win?(HUMAN_MARKER)
+      computer_marker_assigner(board.possible_winning_square(HUMAN_MARKER))
+    elsif square_5_available?
+      computer_marker_assigner(5)
     else
-      board[board.unmarked_keys.sample] = computer.marker
+      computer_marker_assigner(board.unmarked_keys.sample)
     end
   end
 
@@ -235,8 +264,12 @@ class TTTGame < Marker
     end
   end
 
-  def human_player_about_to_win?
-    board.possible_winning_square ? true : false
+  def player_about_to_win?(player_marker)
+    board.possible_winning_square(player_marker) ? true : false
+  end
+
+  def square_5_available?
+    board[5] == INITIAL_MARKER
   end
 
   def human_turn?
@@ -278,6 +311,7 @@ class TTTGame < Marker
     else
       puts "It's a tie!"
     end
+    puts ""
   end
 
   def play_again_response
