@@ -575,6 +575,342 @@ This allows us to only invoke the `set_current_marker` method if `FIRST_TO_MOVE 
 
 ---
 
+The first thing to think about is perhaps when we want to ask the user for the marker they want to use.  
+
+* Do we want to ask the user to choose their marker after each individual game? Or, after each set?
+* I think we want to do it after each set. Thus, we will want to create another loop outside of the individual game loop.
+
+I think we may also want to perhaps change the interface for choosing who goes first. We could also implement this so that the user chooses at the start of a set who goes first. Then, we could maybe do something where the loser of each individual round gets to move first the next game. Once a player obtains  five victories, then they will be prompted about playing a new set and if so then they will have the option to choose their marker again and who will lead off the turns.
+
+```ruby
+def play
+  clear
+  display_welcome_message
+	
+  loop do # new loop
+    
+    # choose who goes first
+    # choose marker ('X' or 'O')
+    
+    
+  	loop do
+    	@current_marker = choose_first_to_move if FIRST_TO_MOVE == CHOOSE
+    	display_board
+
+    	loop do
+      	current_player_moves
+      	break if board.someone_won? || board.full?
+      	clear_screen_and_display_board if human_turn?
+    	end
+
+    	display_result
+    	update_score
+    	display_score
+
+    	break unless play_again? # change this to continue_playing?
+
+    	reset
+    	display_play_again_message
+  	end
+    
+    # break unless play_another_set? # this will be a play again for a new set
+    # reset
+    # display_play_another_set_message   
+  end
+
+  display_goodbye_message
+end
+```
+
+The next thing we want to think about is dissociating the turn order with the specific markers. We first need to decide who is going first, and then we will decide which player has which marker.  
+
+It might be expedient to add a new instance variable to the `Player` class, one that specifies their turn. We could name it `@turn_order` and associate it with a string `'1st'` or `'2nd'`. We will want to able to both read and rewrite this new variable.
+
+```ruby
+class Player
+  attr_reader :marker, :score, :turn_order
+
+  def initialize(marker)
+    @marker = marker
+    @score = 0
+    @turn_order = nil
+  end
+
+  def add_point
+    @score += 1
+  end
+
+  def reset_score
+    @score = 0
+  end
+end
+```
+
+Then we can define a `TTTGame@choose_who_goes_first` method:
+
+```ruby
+def choose_first_to_move
+  puts "Choose who goes first (y for 'you' or c for 'computer'): "
+  choice = nil
+  
+  loop do
+    choice = gets.chomp.downcase
+    break if choice == 'y' || choice == 'c'
+    puts "Sorry, invalid choice. Choose y or c: "
+  end
+  
+  clear
+  choice == 'y' ? @human.turn_order = '1st' : @computer.turn_order = '1st'
+end
+```
+
+We can also easily redefine our `human_turn?` method:
+
+```ruby
+def human_turn?
+  @human.turn_order == "1st"
+end
+```
+
+The `current_player_moves` method will also need to be changed in order to incorporate the above changes of how the program tracks whose turn it is:
+
+```ruby
+def current_player_moves
+  if human_turn?
+    human_moves
+    @human.turn_order = '2nd'
+    @computer.turn_order = '1st'
+  else
+    computer_moves
+    @computer.turn_order = '2nd'
+    @human.turn_order = '1st'
+  end
+end
+```
+
+So, the start of our `TTTGame#play` method looks like this:
+
+```ruby
+def play
+  clear
+  display_welcome_message
+  
+  choose_first_to_move if FIRST_TO_MOVE == CHOOSE
+  
+  loop do
+    display_board
+    
+    loop do
+      current_player_moves
+  
+  # ....
+```
+
+We now want to intrdouce a `choose_marker` method to be invoked following the `choose_first_to_move` method.
+
+```ruby
+def choose_marker
+  puts "Choose your marker (X or O): "
+  choice = nil
+  
+  loop do
+    choice = gets.chomp.upcase
+    if choice == 'X'
+      @human.marker = 'X'
+      @computer.marker = 'O'
+      break
+    elsif choice == 'O'
+      @human.marker = 'O'
+      @computer.marker = 'X'
+      break
+    else
+      puts "Sorry, invalid choice. Choose X or O: "
+    end
+  end
+end
+```
+
+We will have to change the `initialize` method within the `Player` class so that there is no `marker` argument passed, but instead the `@marker` instance variable will be assigned to `nil`.
+
+```ruby
+class Player
+  attr_reader :score
+  attr_accessor :marker, :turn_order
+  
+  def initialize
+    @marker = nil
+    @score = 0
+    @turn_order = nil
+  end
+  
+  # ....
+```
+
+The program stil runs but there are some obvious problems with the game due to the residual code that specificies the markers associated with each player. I will have to go through and replace whereever there is a `HUMAN_MARKER` with `@human.marker` and `COMPUTER_MARKER` with `@computer.marker`. We can even remove those two constants from our `Marker` class.  
+
+Now, I want to implement the separate loop to separate out the five-wins set from the individual games. Let's introduce a new method called `TTTGame#someone_won_set?` and change our `Board#someone_won?` method to `Board#someone_won_game?`.
+
+```ruby
+def someone_won_set?
+  @human.score == 5 || @computer.score == 5
+end
+```
+
+Then I insert a `break if someone_won_set?` line in the `TTTGame#play` method:
+
+```ruby
+def play
+  
+  # ...
+  
+  display_result
+  update_score
+  display_score
+  
+  break if someone_won_set?
+  break unless play_again?
+  
+  # ...
+  
+  
+```
+
+Now, I want to change the `play_again?` method name to `continue_playing_current_set?`, and revise its definition since we no longer need to specify two separate cases, one for the current set and one for a brand new set:
+
+```ruby
+def continue_playing_current_set?
+  puts "Would you like to continue playing the current set? (y/n): "
+ 	play_again_response == 'y'
+end
+```
+
+Now, I can define a `play_another_set?` method:
+
+```ruby
+def play_another_set?
+  puts "Would you like to play a new set? (y/n): "
+  play_again_response == 'y'
+end
+```
+
+Seems to work, but noticed that when I decided to play a new set, I chose for the computer to go first but this didn't seem to work.  
+
+Just had to modify the `choose_first_to_move` method:
+
+```ruby
+def choose_first_to_move
+  puts "Choose who goes first (y for 'you' or c for 'computer'): "
+  choice = nil
+
+  loop do
+    choice = gets.chomp.downcase
+    if choice == 'y'
+      @human.turn_order = '1st'
+      @computer.turn_order = '2nd'
+      break
+    elsif choice == 'c'
+      @human.turn_order = '2nd'
+      @computer.turn_order = '1st'
+      break
+    else
+      puts "Sorry, invalid choice. Choose y or c: "
+    end
+  end
+
+  clear
+end
+```
+
+Now, I need to rename the `TTTGame#reset` method to `TTTGame#reset_game` and define a `TTTGame#reset_game_and_scores` that will also reset the players' scores to `0`.
+
+```ruby
+def reset_game_and_scores
+  reset_game
+  @human.reset_score
+  @computer.reset_score
+end
+```
+
+Now, I need to figure out how to touch up the `FIRST_TO_MOVE` constant and decide whether a whole `Marker` class is really necessary.  
+
+First, I can get rid of the `@current_marker` instance variable since it is not really doing anything.
+
+Next, I can change the line `choose_first_to_move if FIRST_TO_MOVE == CHOOSE` to `choose_first_to_move if FIRST_TO_MOVE == "choose"`, and swicth the initiation of the `FIRST_TO_MOVE` constant to `FIRST_TO_MOVE = 'choose'`. But I leave open the other options of either `'human'` or `'computer'`.  
+
+Thus, we need to implement a way to bypass the prompt to choose who goes first if either `'human'` or `'computer'` is specified as the value pertaining to the `FIRST_TO_MOVE` constant.  
+
+Let's create a `specify_the_first_mover` method:
+
+```ruby
+def specify_the_first_mover(mover)
+  case mover
+  when 'choose'
+    choose_first_to_move
+  when 'human'
+    human.turn_order = '1st'
+    computer.turn_order = '2nd'
+  when 'computer'
+    human.turn_order = '2nd'
+    computer.turn_order = '1st'
+  end
+end
+```
+
+I decided that having the `FIRST_TO_MOVE` constant at the top was no longer necessary. Now the start of the `TTTGame#play` method looks like this:
+
+```ruby
+def play
+  clear
+  display_welcome_message
+  
+  loop do
+    specify_the_first_mover('choose') # 'choose', 'human', or 'computer'
+    choose_marker
+    
+    loop do
+      display board
+      
+      #....
+```
+
+Well, I think that does it.
+
+---
+
+#### 3. Set a name for the player and computer.
+
+---
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

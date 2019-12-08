@@ -4,8 +4,6 @@ require 'pry'
 
 class Marker
   INITIAL_MARKER = ' '
-  HUMAN_MARKER = 'X'
-  COMPUTER_MARKER = 'O'
   CHOOSE = nil
 end
 
@@ -37,7 +35,7 @@ class Board < Marker
     unmarked_keys.empty?
   end
 
-  def someone_won?
+  def someone_won_game?
     !!winning_marker
   end
 
@@ -122,11 +120,13 @@ class Square < Marker
 end
 
 class Player
-  attr_reader :marker, :score
+  attr_reader :score
+  attr_accessor :marker, :turn_order
 
-  def initialize(marker)
-    @marker = marker
+  def initialize
+    @marker = nil
     @score = 0
+    @turn_order = nil
   end
 
   def add_point
@@ -139,16 +139,13 @@ class Player
 end
 
 class TTTGame < Marker
-  FIRST_TO_MOVE = CHOOSE # HUMAN_MARKER, COMPUTER_MARKER, or CHOOSE
-
   attr_reader :board, :human, :computer
   attr_writer :current_marker
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_marker = FIRST_TO_MOVE
+    @human = Player.new
+    @computer = Player.new
   end
 
   def play
@@ -156,22 +153,31 @@ class TTTGame < Marker
     display_welcome_message
 
     loop do
-      @current_marker = choose_first_to_move if FIRST_TO_MOVE == CHOOSE
-      display_board
+      specify_the_first_mover('computer') # 'choose', 'human', or 'computer'
+      choose_marker
 
       loop do
-        current_player_moves
-        break if board.someone_won? || board.full?
-        clear_screen_and_display_board if human_turn?
+        display_board
+
+        loop do
+          current_player_moves
+          break if board.someone_won_game? || board.full?
+          clear_screen_and_display_board if human_turn?
+        end
+
+        display_result
+        update_score
+        display_score
+
+        break if someone_won_set?
+        break unless continue_playing_current_set?
+
+        reset_game
       end
-
-      display_result
-      update_score
-      display_score
-
-      break unless play_again?
-
-      reset
+      
+      break unless play_another_set?
+      
+      reset_game_and_scores
       display_play_again_message
     end
 
@@ -196,18 +202,61 @@ class TTTGame < Marker
     puts ""
   end
 
+  def specify_the_first_mover(mover)
+    case mover
+    when 'choose'
+      choose_first_to_move
+    when 'human'
+      human.turn_order = '1st'
+      computer.turn_order = '2nd'
+    when 'computer'
+      human.turn_order = '2nd'
+      computer.turn_order = '1st'
+    end
+  end
+
   def choose_first_to_move
     puts "Choose who goes first (y for 'you' or c for 'computer'): "
     choice = nil
 
     loop do
       choice = gets.chomp.downcase
-      break if choice == 'y' || choice == 'c'
-      puts "Sorry, invalid choice. Choose y or c: "
+      if choice == 'y'
+        @human.turn_order = '1st'
+        @computer.turn_order = '2nd'
+        break
+      elsif choice == 'c'
+        @human.turn_order = '2nd'
+        @computer.turn_order = '1st'
+        break
+      else
+        puts "Sorry, invalid choice. Choose y or c: "
+      end
     end
 
     clear
-    choice == 'y' ? HUMAN_MARKER : COMPUTER_MARKER
+  end
+
+  def choose_marker
+    puts "Choose your marker (X or O): "
+    choice = nil
+    
+    loop do
+      choice = gets.chomp.upcase
+      if choice == 'X'
+        @human.marker = 'X'
+        @computer.marker = 'O'
+        break
+      elsif choice == 'O'
+        @human.marker = 'O'
+        @computer.marker = 'X'
+        break
+      else
+        puts "Sorry, invalid choice. Choose X or O: "
+      end
+    end
+
+    clear
   end
 
   def clear_screen_and_display_board
@@ -243,10 +292,10 @@ class TTTGame < Marker
   end
 
   def computer_moves
-    if player_about_to_win?(COMPUTER_MARKER)
-      computer_marker_assigner(board.possible_winning_square(COMPUTER_MARKER))
-    elsif player_about_to_win?(HUMAN_MARKER)
-      computer_marker_assigner(board.possible_winning_square(HUMAN_MARKER))
+    if player_about_to_win?(@computer.marker)
+      computer_marker_assigner(board.possible_winning_square(@computer.marker))
+    elsif player_about_to_win?(@human.marker)
+      computer_marker_assigner(board.possible_winning_square(@human.marker))
     elsif square_5_available?
       computer_marker_assigner(5)
     else
@@ -257,10 +306,12 @@ class TTTGame < Marker
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @human.turn_order = '2nd'
+      @computer.turn_order = '1st'
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @computer.turn_order = '2nd'
+      @human.turn_order = '1st'
     end
   end
 
@@ -268,19 +319,23 @@ class TTTGame < Marker
     board.possible_winning_square(player_marker) ? true : false
   end
 
+  def someone_won_set?
+    @human.score == 5 || @computer.score == 5
+  end
+
   def square_5_available?
     board[5] == INITIAL_MARKER
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @human.turn_order == "1st"
   end
 
   def update_score
     case board.winning_marker
-    when HUMAN_MARKER
+    when @human.marker
       human.add_point
-    when COMPUTER_MARKER
+    when @computer.marker
       computer.add_point
     end
   end
@@ -326,13 +381,13 @@ class TTTGame < Marker
     answer
   end
 
-  def play_again?
-    if human.score < 5 && computer.score < 5
-      puts "Continue playing? (y/n)"
-    else
-      puts "Woud you like to play another set? (y/n)"
-    end
+  def continue_playing_current_set?
+    puts "Would you like to continue playing the current set? (y/n): "
+    play_again_response == 'y'
+  end
 
+  def play_another_set?
+    puts "Would you like to play a new set? (y/n): "
     play_again_response == 'y'
   end
 
@@ -340,14 +395,15 @@ class TTTGame < Marker
     system 'clear'
   end
 
-  def reset
+  def reset_game
     board.reset
     clear
-    @current_marker = FIRST_TO_MOVE
-    while [human.score, computer.score].include?(5)
-      human.reset_score
-      computer.reset_score
-    end
+  end
+
+  def reset_game_and_scores
+    reset_game
+    @human.reset_score
+    @computer.reset_score
   end
 
   def display_play_again_message
