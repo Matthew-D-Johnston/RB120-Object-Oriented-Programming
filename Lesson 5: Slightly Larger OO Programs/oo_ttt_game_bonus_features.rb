@@ -2,12 +2,9 @@
 
 require 'pry'
 
-class Marker
+class Board
   INITIAL_MARKER = ' '
-  CHOOSE = nil
-end
 
-class Board < Marker
   attr_reader :squares
 
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
@@ -98,7 +95,9 @@ class Board < Marker
   end
 end
 
-class Square < Marker
+class Square
+  INITIAL_MARKER = ' '
+
   attr_accessor :marker, :square_key
 
   def initialize(square_key, marker=INITIAL_MARKER)
@@ -121,7 +120,7 @@ end
 
 class Player
   attr_reader :score
-  attr_accessor :marker, :turn_order
+  attr_accessor :marker, :turn_order, :name
 
   def initialize
     @marker = nil
@@ -138,9 +137,11 @@ class Player
   end
 end
 
-class TTTGame < Marker
+class TTTGame
+  INITIAL_MARKER = ' '
+  COMPUTER_NAMES = ['Alexa', 'R2D2', 'C3P0', 'Ava', 'Gort', 'Sid 6.7', 'Tima']
+
   attr_reader :board, :human, :computer
-  attr_writer :current_marker
 
   def initialize
     @board = Board.new
@@ -153,7 +154,11 @@ class TTTGame < Marker
     display_welcome_message
 
     loop do
-      specify_the_first_mover('computer') # 'choose', 'human', or 'computer'
+      prompt_user_for_name
+      choose_computer_name
+      clear
+      display_personal_welcome_message
+      specify_the_first_mover('human') # 'choose', 'human', or 'computer'
       choose_marker
 
       loop do
@@ -174,9 +179,9 @@ class TTTGame < Marker
 
         reset_game
       end
-      
+
       break unless play_another_set?
-      
+
       reset_game_and_scores
       display_play_again_message
     end
@@ -195,11 +200,39 @@ class TTTGame < Marker
     puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
 
+  def display_personal_welcome_message
+    puts "Welcome #{human.name}. You will be playing against #{computer.name}."
+    puts "Let's get started!!"
+    puts ""
+  end
+
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "You're a #{human.marker}. #{computer.name} is a #{computer.marker}."
     puts ""
     board.draw
     puts ""
+  end
+
+  def prompt_user_for_name
+    puts "Please, enter your name: "
+    name = nil
+
+    loop do
+      name = gets.chomp
+      break unless name == ''
+      puts "Invalid input. Please, type your name: "
+    end
+
+    human.name = name
+  end
+
+  def choose_computer_name
+    computer.name = COMPUTER_NAMES.sample
+  end
+
+  def switch_turn_order(human_turn_order, computer_turn_order)
+    @human.turn_order = human_turn_order
+    @computer.turn_order = computer_turn_order
   end
 
   def specify_the_first_mover(mover)
@@ -207,11 +240,9 @@ class TTTGame < Marker
     when 'choose'
       choose_first_to_move
     when 'human'
-      human.turn_order = '1st'
-      computer.turn_order = '2nd'
+      switch_turn_order('1st', '2nd')
     when 'computer'
-      human.turn_order = '2nd'
-      computer.turn_order = '1st'
+      switch_turn_order('2nd', '1st')
     end
   end
 
@@ -222,12 +253,10 @@ class TTTGame < Marker
     loop do
       choice = gets.chomp.downcase
       if choice == 'y'
-        @human.turn_order = '1st'
-        @computer.turn_order = '2nd'
+        switch_turn_order('1st', '2nd')
         break
       elsif choice == 'c'
-        @human.turn_order = '2nd'
-        @computer.turn_order = '1st'
+        switch_turn_order('2nd', '1st')
         break
       else
         puts "Sorry, invalid choice. Choose y or c: "
@@ -237,19 +266,22 @@ class TTTGame < Marker
     clear
   end
 
+  def universal_marker_assignment(first_marker, second_marker)
+    @human.marker = first_marker
+    @computer.marker = second_marker
+  end
+
   def choose_marker
     puts "Choose your marker (X or O): "
     choice = nil
-    
+
     loop do
       choice = gets.chomp.upcase
       if choice == 'X'
-        @human.marker = 'X'
-        @computer.marker = 'O'
+        universal_marker_assignment('X', 'O')
         break
       elsif choice == 'O'
-        @human.marker = 'O'
-        @computer.marker = 'X'
+        universal_marker_assignment('O', 'X')
         break
       else
         puts "Sorry, invalid choice. Choose X or O: "
@@ -292,10 +324,13 @@ class TTTGame < Marker
   end
 
   def computer_moves
-    if player_about_to_win?(@computer.marker)
-      computer_marker_assigner(board.possible_winning_square(@computer.marker))
-    elsif player_about_to_win?(@human.marker)
-      computer_marker_assigner(board.possible_winning_square(@human.marker))
+    computer_marker = @computer.marker
+    human_marker = @human.marker
+
+    if player_about_to_win?(computer_marker)
+      computer_marker_assigner(board.possible_winning_square(computer_marker))
+    elsif player_about_to_win?(human_marker)
+      computer_marker_assigner(board.possible_winning_square(human_marker))
     elsif square_5_available?
       computer_marker_assigner(5)
     else
@@ -342,12 +377,12 @@ class TTTGame < Marker
 
   def display_score
     puts "You have #{human.score} point(s}."
-    puts "The computer has #{computer.score} point(s)."
+    puts "#{computer.name} has #{computer.score} point(s)."
 
     if human.score == 5
-      puts "You have won the set!"
+      puts "Congratulations, #{human.name}! You won the set!"
     elsif computer.score == 5
-      puts "The computer has won the set!"
+      puts "#{computer.name} has won the set!"
     else
       puts "The first player to five points wins the set."
     end
@@ -362,7 +397,7 @@ class TTTGame < Marker
     when human.marker
       puts "You won!"
     when computer.marker
-      puts "Computer won!"
+      puts "#{computer.name} won!"
     else
       puts "It's a tie!"
     end

@@ -873,13 +873,117 @@ def play
       #....
 ```
 
-Well, I think that does it.
+Well, I think that does it.  
+
+After running Rubocop, I decided to create a `switch_turn_order` method:
+
+```ruby
+def switch_turn_order(human_turn_order, computer_turn_order)
+  @human.turn_order = human_turn_order
+  @computer.turn_order = computer_turn_order
+end
+```
+
+I also created a `universal_marker_assignment` method:
+
+```ruby
+def universal_marker_assignment(first_marker, second_marker)
+  @human.marker = first_marker
+  @computer.marker = second_marker
+end
+```
+
+I also modified the `computer_moves` method to eliminate some of the method calls. I achieved this by creating to local variables and assigning them to the method calls that are repeated in the rest of the method:
+
+```ruby
+def computer_moves
+  computer_marker = @computer.marker
+  human_marker = @human.marker
+  
+  # .... rest of code omitted, but whereever there was one of the two method calls I replaced it with the corresponding local variable.
+```
+
+Rubocop is mostly happy except for the `TTTGame# play` method still being too large and complex, but I think we can live with that.
 
 ---
 
 #### 3. Set a name for the player and computer.
 
 ---
+
+We definitely want to let the player choose their own name, but perhaps for the computer we can assign it one out of a list of possible predetermined names.  
+
+To start, I think we are going to want to add a `@name` instance variable to the `Player` class. We won't initialize it at game play, but allow it to be read and rewritten with an `attr_accessor`:
+
+```ruby
+class Player
+  attr_reader :score
+  attr_accessor :marker, :turn_order, :name
+  
+  def initialize
+    @marker = nil
+    @score = 0
+    @turn_order = nil
+  end
+  
+  # ....
+```
+
+We will want to create names for the player and computer at the beginning of each set. We will prompt the user for their name with a method called `prompt_user_for_name`:
+
+```ruby
+def prompt_user_for_name
+  puts "Please, enter your name: "
+  name = nil
+
+  loop do 
+    name = gets.chomp
+    break unless name == ''
+    puts "Invalid input. Please, type your name: "
+  end
+  
+  @human.name = name
+end
+```
+
+Now, create a method that will choose a name for the computer at random: 
+
+```ruby
+def choose_computer_name
+  computer.name = ['Alexa', 'R2D2', 'C3P0', 'Ava', 'Gort', 'Sid 6.7', 'Tima'].sample
+end
+```
+
+Let's create a constant variable, `COMPUTER_NAMES` and call `sample` on that in our method:
+
+```ruby
+COMPUTER_NAMES = ['Alexa', 'R2D2', 'C3P0', 'Ava', 'Gort', 'Sid 6.7', 'Tima']
+
+# ...
+
+def choose_computer_name
+  computer.name = COMPUTER_NAMES.sample
+end
+```
+
+Now write a short, personalized welcome message that tells the user who they will be playing against:
+
+```ruby
+def display_personal_welcome_message
+  puts "Welcome #{human.name}. You will be playing against #{computer.name}."
+  puts "Let's get started!!"
+  puts ""
+end
+```
+
+We now should modify the `display_board` method:
+
+```ruby
+def display_board
+  puts "You're a #{human.marker}. #{computer.name} is a #{computer.marker}."
+  
+  # ...
+```
 
 
 
