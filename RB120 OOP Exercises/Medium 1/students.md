@@ -58,3 +58,45 @@ class Undergraduate < Student
 end
 ```
 
+---
+
+**Further Exploration:**  
+
+There is one other "form" of the keyword `super`. We can call it as `super()`. This calls the superclass method of the same name as teh calling method, but here no arguments are passed to the superclass method at all.  
+
+Can you think of a way to use `super()` in another Student related class?  
+
+**My Solution:**  
+
+```ruby
+class StudentBody
+  @@total_students = 0
+
+  def initialize
+    @@total_students += 1
+    @student_number = @@total_students
+  end
+end
+
+class Student < StudentBody
+  def initialize(name, year)
+    @name = name
+    @year = year
+    super()
+  end
+end
+
+class Graduate < Student
+  def initialize(name, year, parking)
+    super(name, year)
+    @parking = parking
+  end
+end
+
+class Undergraduate < Student
+  def initialize(name, year)
+    super
+  end
+end
+```
+
